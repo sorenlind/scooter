@@ -22,9 +22,8 @@ ctrl_c_pressed = 0
 db = redis.StrictRedis(host="localhost", port=6379, db=0)
 
 
-def predictions_process(model_loader, sample_decoder, prediction_decoder):
+def predictions_process(model, sample_decoder, prediction_decoder):
     """Continuously query queue for new prediction jobs and execute them."""
-    model = model_loader()
 
     # continually pool for new data to classify
     while True:
@@ -105,13 +104,7 @@ def _signal_handler(sig, frame):
     ctrl_c_pressed = False
 
 
-def start_model_server(load_model, decode_sample, decode_predictions):
+def start_model_server(model, decode_sample, decode_predictions):
     print("Starting prediction service")
-    # return
     # signal.signal(signal.SIGINT, _signal_handler)
-    thread = Thread(target=predictions_process, args=(load_model, decode_sample, decode_predictions))
-    thread.daemon = True
-    thread.start()
-
-    while True:
-        time.sleep(1)
+    predictions_process(model, decode_sample, decode_predictions)
