@@ -1,11 +1,13 @@
 """Scooter RESTful API."""
 
 import json
+import os
+import socket
 import time
 import uuid
 
 import flask
-import redis
+from redis import RedisError, StrictRedis
 
 # initialize constants used for server queuing
 # TODO: Deduplicate these
@@ -15,9 +17,23 @@ CLIENT_SLEEP = 0.25
 
 # initialize our Flask application, Redis server, and Keras model
 app = flask.Flask(__name__)
-db = redis.StrictRedis(host="localhost", port=6379, db=0)
+db = StrictRedis(host="redis", db=0)
 
 # TODO: Save image to disk or database
+
+
+@app.route("/")
+def hello():
+    try:
+        visits = db.incr("counter")
+    except RedisError:
+        visits = "<i>cannot connect to Redis, counter disabled</i>"
+
+    html = "<h3>Hello {name}!</h3>" \
+           "<b>Scooter is running.</b><br />"\
+           "<b>Hostname:</b> {hostname}<br/>" \
+           "<b>Visits:</b> {visits}"
+    return html.format(name=os.getenv("NAME", "world"), hostname=socket.gethostname(), visits=visits)
 
 
 @app.route("/predict", methods=["POST"])
