@@ -107,6 +107,7 @@ def _signal_handler(sig, frame):
 
 def start_model_server(load_model, decode_sample, decode_predictions):
     print("Starting prediction service")
+    return
     signal.signal(signal.SIGINT, _signal_handler)
     thread = Thread(target=predictions_process, args=(load_model, decode_sample, decode_predictions))
     thread.daemon = True
