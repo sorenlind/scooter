@@ -19,7 +19,7 @@ CLIENT_SLEEP = 0.25
 TIMEOUT = 5
 ctrl_c_pressed = 0
 
-db = redis.StrictRedis(host="localhost", port=6379, db=0)
+db = redis.StrictRedis(host="redis", db=0)
 
 
 def predictions_process(model, sample_decoder, prediction_decoder):
@@ -107,4 +107,9 @@ def _signal_handler(sig, frame):
 def start_model_server(model, decode_sample, decode_predictions):
     print("Starting prediction service")
     # signal.signal(signal.SIGINT, _signal_handler)
+    try:
+        db.ping()
+    except redis.ConnectionError:
+        print("Cannot connect to redis. Aborting.")
+        return
     predictions_process(model, decode_sample, decode_predictions)
