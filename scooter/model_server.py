@@ -3,7 +3,6 @@
 import json
 import time
 import os
-from threading import Thread
 import signal
 from select import select
 import sys
@@ -15,7 +14,6 @@ import redis
 PREDICTION_QUEUE = "prediction:queue"
 BATCH_SIZE = 32
 SERVER_SLEEP = 0.25
-CLIENT_SLEEP = 0.25
 
 TIMEOUT = 5
 ctrl_c_pressed = 0
