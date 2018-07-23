@@ -6,6 +6,8 @@ ADD . /scooter
 RUN pip3 install .
 RUN pip3 install gunicorn
 
+ENV SCOOTER_REDIS redis
+
 EXPOSE 80
 
 CMD ["gunicorn", "-b", "0.0.0.0:80", "wsgi:app"]

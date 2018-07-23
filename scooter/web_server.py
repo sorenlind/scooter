@@ -17,7 +17,7 @@ CLIENT_SLEEP = 0.25
 
 # initialize our Flask application, Redis server, and Keras model
 app = flask.Flask(__name__)
-db = StrictRedis(host="redis", db=0)
+db = StrictRedis(host=os.environ['SCOOTER_REDIS'], db=0)
 
 # TODO: Save image to disk or database
 

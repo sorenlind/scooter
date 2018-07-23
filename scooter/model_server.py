@@ -2,6 +2,7 @@
 
 import json
 import time
+import os
 from threading import Thread
 import signal
 from select import select
@@ -19,7 +20,7 @@ CLIENT_SLEEP = 0.25
 TIMEOUT = 5
 ctrl_c_pressed = 0
 
-db = redis.StrictRedis(host="redis", db=0)
+db = redis.StrictRedis(host=os.environ['SCOOTER_REDIS'], db=0)
 
 
 def predictions_process(model, sample_decoder, prediction_decoder):
