@@ -1,8 +1,9 @@
 """Scooter ML model server."""
 
 import json
-import time
+import logging
 import os
+import time
 
 import numpy as np
 import redis
@@ -11,6 +12,8 @@ import redis
 PREDICTION_QUEUE = "prediction:queue"
 BATCH_SIZE = 32
 SERVER_SLEEP = 0.25
+
+logger = logging.getLogger(__name__)
 
 db = redis.StrictRedis(host=os.environ['SCOOTER_REDIS'], db=0)
 
@@ -28,7 +31,7 @@ def predictions_process(model, sample_decoder, prediction_decoder):
             continue
 
         # classify the batch
-        print("Predicting on batch of size: %s" % (batch.shape,))
+        logger.info("Predicting on batch of size: %s", (batch.shape,))
         preds = model.predict(batch)
         results = prediction_decoder(preds)
 
@@ -46,7 +49,7 @@ def predictions_process(model, sample_decoder, prediction_decoder):
             db.set(x_id, json.dumps(output))
 
         # remove the set of images from our queue
-        print("Removing %s item(s) from queue" % len(x_ids))
+        logger.info("Removing %s jobs(s) from queue", len(x_ids))
         db.ltrim(PREDICTION_QUEUE, len(x_ids), -1)
 
         time.sleep(SERVER_SLEEP)
@@ -76,10 +79,11 @@ def _build_batch(batch_elements, sample_decoder):
 
 
 def start_model_server(model, decode_sample, decode_predictions):
-    print("Starting prediction service")
+    logger.info("Starting prediction service")
     try:
         db.ping()
     except redis.ConnectionError:
-        print("Cannot connect to redis. Aborting.")
+        logger.error("Cannot connect to redis. Aborting.")
         return
+    logger.info("Ready for prediction jobs")
     predictions_process(model, decode_sample, decode_predictions)

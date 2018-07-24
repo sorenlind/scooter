@@ -1,5 +1,6 @@
 """Scooter RESTful API."""
 
+import logging
 import json
 import os
 import socket
@@ -50,7 +51,7 @@ def predict():
     # generate an ID for the prediction then add the ID + data to the queue
     x_id = str(uuid.uuid4())
     element = {"id": x_id, "x": input_data, "parameters": parameters}
-    print("Pushing job to queue")
+    app.logger.info("Pushing job '%s' to queue", x_id)
     db.rpush(PREDICTION_QUEUE, json.dumps(element))
 
     # keep looping until our model server returns the output predictions
@@ -63,11 +64,13 @@ def predict():
             time.sleep(CLIENT_SLEEP)
             continue
 
+        logging.info("Found result for job '%s'", x_id)
         # add the output predictions to our data dictionary so we can return it to the client
         output = output.decode("utf-8")
         data["predictions"] = json.loads(output)
 
         # delete the result from the database and break from the polling loop
+        logging.info("Removing result for job '%s'", x_id)
         db.delete(x_id)
         break
 
