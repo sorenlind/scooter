@@ -10,4 +10,4 @@ ENV SCOOTER_REDIS redis
 
 EXPOSE 80
 
-CMD ["gunicorn", "-b", "0.0.0.0:80", "wsgi:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:80", "wsgi:app", "--log-config=logging.conf"]
