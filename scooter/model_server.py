@@ -52,6 +52,7 @@ def predictions_process(model, sample_decoder, prediction_decoder):
             db.set(x_id, json.dumps(output))
 
         # remove the set of images from our queue
+        print("Removing %s item(s) from queue" % len(x_ids))
         db.ltrim(PREDICTION_QUEUE, len(x_ids), -1)
 
         time.sleep(SERVER_SLEEP)

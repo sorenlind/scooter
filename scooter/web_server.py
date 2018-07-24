@@ -50,6 +50,7 @@ def predict():
     # generate an ID for the prediction then add the ID + data to the queue
     x_id = str(uuid.uuid4())
     element = {"id": x_id, "x": input_data, "parameters": parameters}
+    print("Pushing job to queue")
     db.rpush(PREDICTION_QUEUE, json.dumps(element))
 
     # keep looping until our model server returns the output predictions
