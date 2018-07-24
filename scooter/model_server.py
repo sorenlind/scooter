@@ -3,9 +3,6 @@
 import json
 import time
 import os
-import signal
-from select import select
-import sys
 
 import numpy as np
 import redis
@@ -14,9 +11,6 @@ import redis
 PREDICTION_QUEUE = "prediction:queue"
 BATCH_SIZE = 32
 SERVER_SLEEP = 0.25
-
-TIMEOUT = 5
-ctrl_c_pressed = 0
 
 db = redis.StrictRedis(host=os.environ['SCOOTER_REDIS'], db=0)
 
@@ -81,32 +75,8 @@ def _build_batch(batch_elements, sample_decoder):
     return batch, x_ids
 
 
-def _signal_handler(sig, frame):
-    global ctrl_c_pressed
-    if ctrl_c_pressed:
-        print("")
-        print("Shutting down.")
-        sys.exit(0)
-
-    ctrl_c_pressed = True
-
-    print("\rShut down this prediction service (y/[n])? ", end="")
-    rlist, _, _ = select([sys.stdin], [], [], TIMEOUT)
-    if rlist:
-        s = sys.stdin.readline()
-        if s.strip() == "y":
-            print("Shutting down.")
-            sys.exit(0)
-        print("Resuming.")
-    else:
-        print("No answer. Resuming.")
-
-    ctrl_c_pressed = False
-
-
 def start_model_server(model, decode_sample, decode_predictions):
     print("Starting prediction service")
-    # signal.signal(signal.SIGINT, _signal_handler)
     try:
         db.ping()
     except redis.ConnectionError:
