@@ -17,7 +17,7 @@ setup(
     url="https://github.com/sorenlind/scooter/",
     keywords="machine learning api flask rest",
     packages=find_packages(),
-    install_requires=['numpy', 'scipy', 'h5py', 'flask', 'flask-cors', 'gevent', 'requests', 'redis'],
+    install_requires=['numpy', 'scipy', 'h5py', 'flask', 'flask-cors', 'requests', 'redis'],
     extras_require={
         'test': ['pytest', 'tox'],
         'dev': ['pylint', 'pycodestyle', 'pydocstyle', 'yapf', 'rope'],
