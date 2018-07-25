@@ -14,4 +14,4 @@ WEB_SLEEP = float(os.environ.get('SCOOTER_WEB_SLEEP', "0.25"))
 WORKER_SLEEP = float(os.environ.get('SCOOTER_WORKER_SLEEP', "0.25"))
 
 # Maximum batch size used when making predictions.
-BATCH_SIZE = float(os.environ.get('SCOOTER_BATCH_SIZE', "32"))
+BATCH_SIZE = int(os.environ.get('SCOOTER_BATCH_SIZE', "32"))
