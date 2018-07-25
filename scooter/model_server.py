@@ -8,14 +8,12 @@ import time
 import numpy as np
 import redis
 
-# initialize constants used for server queuing
-PREDICTION_QUEUE = "prediction:queue"
-BATCH_SIZE = 32
-SERVER_SLEEP = 0.25
+from scooter.settings import REDIS_HOST, REDIS_QUEUE, WORKER_SLEEP, BATCH_SIZE
+
 
 logger = logging.getLogger(__name__)
 
-db = redis.StrictRedis(host=os.environ['SCOOTER_REDIS'], db=0)
+db = redis.StrictRedis(host=REDIS_HOST, db=0)
 
 
 def predictions_process(model, sample_decoder, prediction_decoder):
@@ -23,11 +21,11 @@ def predictions_process(model, sample_decoder, prediction_decoder):
 
     # continually pool for new data to classify
     while True:
-        batch_elements = db.lrange(PREDICTION_QUEUE, 0, BATCH_SIZE - 1)
+        batch_elements = db.lrange(REDIS_QUEUE, 0, BATCH_SIZE - 1)
         batch, x_ids = _build_batch(batch_elements, sample_decoder)
 
         if not x_ids:
-            time.sleep(SERVER_SLEEP)
+            time.sleep(WORKER_SLEEP)
             continue
 
         # classify the batch
@@ -50,9 +48,9 @@ def predictions_process(model, sample_decoder, prediction_decoder):
 
         # remove the set of images from our queue
         logger.info("Removing %s jobs(s) from queue", len(x_ids))
-        db.ltrim(PREDICTION_QUEUE, len(x_ids), -1)
+        db.ltrim(REDIS_QUEUE, len(x_ids), -1)
 
-        time.sleep(SERVER_SLEEP)
+        time.sleep(WORKER_SLEEP)
 
 
 def _build_batch(batch_elements, sample_decoder):

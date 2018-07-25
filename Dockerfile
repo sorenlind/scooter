@@ -6,7 +6,7 @@ ADD . /scooter
 RUN pip3 install .
 RUN pip3 install gevent gunicorn
 
-ENV SCOOTER_REDIS redis
+ENV SCOOTER_REDIS_HOST redis
 
 EXPOSE 80
 

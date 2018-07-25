@@ -10,15 +10,11 @@ import uuid
 import flask
 from redis import RedisError, StrictRedis
 
-# initialize constants used for server queuing
-# TODO: Deduplicate these
-# TODO: We could load them from environment variables if nothing else works.
-PREDICTION_QUEUE = "prediction:queue"
-CLIENT_SLEEP = 0.25
+from scooter.settings import REDIS_HOST, REDIS_QUEUE, WEB_SLEEP
 
-# initialize our Flask application, Redis server, and Keras model
+
 app = flask.Flask(__name__)
-db = StrictRedis(host=os.environ['SCOOTER_REDIS'], db=0)
+db = StrictRedis(host=REDIS_HOST, db=0)
 
 # TODO: Save image to disk or database
 
@@ -52,7 +48,7 @@ def predict():
     x_id = str(uuid.uuid4())
     element = {"id": x_id, "x": input_data, "parameters": parameters}
     app.logger.info("Pushing job '%s' to queue", x_id)
-    db.rpush(PREDICTION_QUEUE, json.dumps(element))
+    db.rpush(REDIS_QUEUE, json.dumps(element))
 
     # keep looping until our model server returns the output predictions
     while True:
@@ -61,7 +57,7 @@ def predict():
 
         # check to see if our model has classified the input image
         if output is None:
-            time.sleep(CLIENT_SLEEP)
+            time.sleep(WEB_SLEEP)
             continue
 
         logging.info("Found result for job '%s'", x_id)
