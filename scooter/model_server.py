@@ -17,9 +17,12 @@ db = redis.StrictRedis(host=REDIS_HOST, db=0)
 
 def predictions_process(model, sample_decoder, prediction_decoder):
     """Continuously query queue for new prediction jobs and execute them."""
-
     while True:
-        batch_elements = db.lrange(REDIS_QUEUE, 0, BATCH_SIZE - 1)
+        pipe = db.pipeline()
+        pipe.lrange(REDIS_QUEUE, 0, BATCH_SIZE - 1)
+        pipe.ltrim(REDIS_QUEUE, BATCH_SIZE, -1)
+        batch_elements, _ = pipe.execute()
+
         batch, x_ids = _build_batch(batch_elements, sample_decoder)
 
         if not x_ids:
@@ -37,10 +40,6 @@ def predictions_process(model, sample_decoder, prediction_decoder):
                 output.append(result)
 
             db.set(x_id, json.dumps(output))
-
-        logger.info("Removing %s jobs(s) from queue", len(x_ids))
-        db.ltrim(REDIS_QUEUE, len(x_ids), -1)
-
         time.sleep(WORKER_SLEEP)
 
 
