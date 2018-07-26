@@ -40,7 +40,6 @@ def predictions_process(model, sample_decoder, prediction_decoder):
                 output.append(result)
 
             db.set(x_id, json.dumps(output))
-        time.sleep(WORKER_SLEEP)
 
 
 def _build_batch(batch_elements, sample_decoder):
