@@ -54,7 +54,7 @@ def _build_batch(batch_elements, sample_decoder):
         try:
             image = sample_decoder(element["x"])
         except Exception:
-            logger.info("Received bad data. Cannot put on queue.")
+            logger.info("Received bad data. Cannot add to batch.")
             bad_ids.append(element["id"])
             continue
 
