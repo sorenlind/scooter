@@ -9,7 +9,6 @@ import redis
 
 from scooter.settings import REDIS_HOST, REDIS_QUEUE, WORKER_SLEEP, BATCH_SIZE
 
-
 logger = logging.getLogger(__name__)
 
 db = redis.StrictRedis(host=REDIS_HOST, db=0)
@@ -23,13 +22,16 @@ def predictions_process(model, sample_decoder, prediction_decoder):
         pipe.ltrim(REDIS_QUEUE, BATCH_SIZE, -1)
         batch_elements, _ = pipe.execute()
 
-        batch, x_ids = _build_batch(batch_elements, sample_decoder)
+        batch, x_ids, bad_ids = _build_batch(batch_elements, sample_decoder)
+
+        for bad_id in bad_ids:
+            db.set(bad_id, json.dumps({"error": "Unknown"}))
 
         if not x_ids:
             time.sleep(WORKER_SLEEP)
             continue
 
-        logger.info("Predicting on batch of size: %s", (batch.shape,))
+        logger.info("Predicting on batch of size: %s", (batch.shape, ))
         preds = model.predict(batch)
         results = prediction_decoder(preds)
 
@@ -45,10 +47,16 @@ def predictions_process(model, sample_decoder, prediction_decoder):
 def _build_batch(batch_elements, sample_decoder):
     x_ids = []
     batch = None
+    bad_ids = []
 
     for element in batch_elements:
         element = json.loads(element.decode("utf-8"))
-        image = sample_decoder(element["x"])
+        try:
+            image = sample_decoder(element["x"])
+        except Exception:
+            logger.info("Received bad data. Cannot put on queue.")
+            bad_ids.append(element["id"])
+            continue
 
         if batch is None:
             batch = image
@@ -57,7 +65,7 @@ def _build_batch(batch_elements, sample_decoder):
             batch = np.vstack([batch, image])
 
         x_ids.append(element["id"])
-    return batch, x_ids
+    return batch, x_ids, bad_ids
 
 
 def start_model_server(model, decode_sample, decode_predictions):
