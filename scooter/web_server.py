@@ -35,43 +35,44 @@ def hello():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    # initialize the data dictionary that will be returned from the view
-    data = {"success": False}
-
     input_data = flask.request.json['data']
+    parameters = flask.request.json.get('parameters', {})
+    result = _predict(input_data, parameters)
+    return flask.jsonify(result)
+
+
+def _predict(input_data, parameters):
+    data = {"success": False}
+    # TODO: Is this the place to handle missing input data?
     if not input_data:
         return data
 
-    parameters = flask.request.json.get('parameters', {})
+    start_time = time.time()
 
-    # generate an ID for the prediction then add the ID + data to the queue
-    x_id = str(uuid.uuid4())
-    element = {"id": x_id, "x": input_data, "parameters": parameters}
-    app.logger.info("Pushing job '%s' to queue", x_id)
+    # Push job to queue
+    instance_id = str(uuid.uuid4())
+    element = {"id": instance_id, "x": input_data, "parameters": parameters}
+    app.logger.info("Pushing job '%s' to queue", instance_id)
     db.rpush(REDIS_QUEUE, json.dumps(element))
+    app.logger.info("Job pushed after %s seconds", round(time.time() - start_time, 2))
 
-    # keep looping until our model server returns the output predictions
     while True:
-        # attempt to grab the output predictions
-        output = db.get(x_id)
+        output = db.get(instance_id)
 
-        # check to see if our model has classified the input image
         if output is None:
             time.sleep(WEB_SLEEP)
             continue
 
-        logging.info("Found result for job '%s'", x_id)
-        # add the output predictions to our data dictionary so we can return it to the client
+        app.logger.info("Found result for job '%s'", instance_id)
         output = output.decode("utf-8")
         data["predictions"] = json.loads(output)
 
-        # delete the result from the database and break from the polling loop
-        logging.info("Removing result for job '%s'", x_id)
-        db.delete(x_id)
+        app.logger.info("Removing result for job '%s'", instance_id)
+        db.delete(instance_id)
         break
 
-    # indicate that the request was a success
     data["success"] = True
 
-    # return the data dictionary as a JSON response
-    return flask.jsonify(data)
+    app.logger.info("Classification completed after %s seconds", round(time.time() - start_time, 2))
+
+    return data
